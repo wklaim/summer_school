@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 
 #Function defining initial conditions
 def initialPosBell(x):
-	return np.where(x%1. < 0.5 , np.power( np.sin( 2*x*np.pi), 2), 0)
+	return np.where(x%1. < 0.5 , np.power( np.sin( 2*x*np.pi), 1), 0)
+
+def initialSin(x):
+	return np.where(x%1. < 1 , np.sin( 2*x*np.pi), 0)
 
 def initialNegBell(x):
 	return np.where(x%1. < 0.5 , -1 * np.power( np.sin( 2*x*np.pi), 2), 0)
@@ -104,24 +107,27 @@ def burger_adv_FT_5points(parameters, total_time):
     dt = total_time/nt          #Time step in seconds
        
     x = np.linspace(0.0, 1.0, nx+1)
-    u = initialBell(x)
-    u_new = u.copy()
-    u_old = u.copy()
+    uadv = initialBell(x)
+    uadv_new = uadv.copy()
+    uadv_old = uadv.copy()
         
-    #FTBS
+    #FTCS 5 point stencil
          
     for n in range(1,nt):
-        for j in range(2,nx):
-            u_new[j] = u[j]*( 1 + dt/dx * ( u[j] - u[j] ) )
+        for j in range(2,nx-2):
+            uadv_new[j] = uadv[j] - dt/(12*dx) * ( -uadv[j+2] +8*uadv[j+1] - 8*uadv[j-1] + uadv[j-2] ) )
             
             #Apply bound conditions
             #Calculate u[0] by using the penultimate u as u[-1]
-            u_new[0] = u[0]*( 1 + dt/dx * ( u[0] - u[nx-1] ) )
+            uadv_new[0] = uadv[0]*( 1 - dt/dx * ( uadv[0] - uadv[nx-1] ) )
             
             #update u for new timestep
-            u_old = u.copy() 
-            u = u_new.copy()
+            uadv_old = uadv.copy() 
+            uadv= uadv_new.copy()
             
+    
+
+
     return u
 
 
@@ -130,7 +136,7 @@ def main():
     param = {'nx': 70, 'nt': int(1e4)}
 
     #Execute code
-    total_time = 0.40    
+    total_time = 0.87    
     x = np.linspace(0.0, 1.0, param['nx']+1)
     pos_cond = initialPosBell(x)
     neg_cond = initialNegBell(x)
